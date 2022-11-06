@@ -1,9 +1,10 @@
 import uuid
 from flask import request
 from flask.views import MethodView
-from db import db
 from flask_smorest import abort, Blueprint
-
+from db import db
+from models import ItemModel 
+from sqlalchemy.exc import SQLAlchemyError
 from schemas import ItemSchema, ItemUpdateSchema
 
 
@@ -16,36 +17,36 @@ class Item(MethodView):
     @item.response(200, ItemSchema)
     def put(self, data, id):
         # data = request.get_json()
+        item = ItemModel.query.get_or_404(id)
+        item.price = data["price"]
+        item.name = data["name"]
 
-        try:
-            items[id] |= data
-            return data
-        except KeyError:
-            abort(404, message="Item not found")
+        db.session.add(item)
+        db.session.commit()
+        return item
+
 
     def delete(self, id):
-        try:
-            result = {"deleted": True, **items[id]}
-            del items[id]
-            return result
-        except KeyError:
-            abort(404, message="Item not found")
+        item = ItemModel.query.get_or_404(id)
+        db.session.delete(item)
+        db.session.commit()
+        return {'deleted': True}
 
 
 @item.route("/items")
 class ItemList(MethodView):
     @item.response(200, ItemSchema(many=True))
     def get(self):
-        return list(items.values())
+        return ItemModel.query.all()
+        # return list(items.values())
 
     @item.arguments(ItemSchema)
     @item.response(201, ItemSchema)
     def post(self, data):
-        # data = request.get_json()
-        id = uuid.uuid4().hex
-        item = {"id": id, **data}
+        item = ItemModel(**data)
         try:
-            items[id] = item
-            return item
-        except KeyError:
-            abort(404, message="Item not found")
+            db.session.add(item)
+            db.session.commit()
+        except SQLAlchemyError:
+            abort(500, message="error")
+        return item
