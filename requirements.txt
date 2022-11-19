@@ -8,3 +8,5 @@ flask_jwt_extended
 flask-migrate
 gunicorn
 psycopg2
+rq
+redis
