@@ -6,6 +6,7 @@ from resources.user import user
 from db import db
 from flask_jwt_extended import JWTManager
 import models
+from flask_migrate import Migrate
 
 def create_app():
     app = Flask(__name__)
@@ -19,11 +20,13 @@ def create_app():
     app.config["OPENAPI_SWAGGER_UI_URL"] = "https://cdn.jsdelivr.net/npm/swagger-ui-dist/"
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database.db"
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-    db.init_app(app)
 
-    @app.before_first_request
-    def create_table():
-        db.create_all()
+    db.init_app(app)
+    migrate = Migrate(app,db)
+
+    # @app.before_first_request
+    # def create_table():
+    #     db.create_all()
 
     @app.get('/')
     def HelloWorld():
