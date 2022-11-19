@@ -2,7 +2,9 @@ from flask import Flask
 from flask_smorest import Api
 from resources.store import store
 from resources.item import item
+from resources.user import user
 from db import db
+from flask_jwt_extended import JWTManager
 import models
 
 def create_app():
@@ -35,7 +37,23 @@ def create_app():
 
     api = Api(app)
 
+    app.config["JWT_SECRET_KEY"] = "super-secret"  # Change this!
+    jwt = JWTManager(app)
+
+    @jwt.additional_claims_loader
+    def add_claim(identity):
+        if identity == 1:
+            return {"is_admin": 1}
+        else:
+            return {"is_admin": 0}
+
+
+    @jwt.invalid_token_loader
+    def invalid_token(error):
+        return {"message": "invalid token"},403
+
     api.register_blueprint(item)
     api.register_blueprint(store)
+    api.register_blueprint(user)
 
     return app

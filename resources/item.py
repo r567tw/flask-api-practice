@@ -7,6 +7,8 @@ from models import ItemModel
 from sqlalchemy.exc import SQLAlchemyError
 from schemas import ItemSchema, ItemUpdateSchema
 
+from flask_jwt_extended import jwt_required,get_jwt
+
 
 item = Blueprint("items", __name__, description="Item")
 
@@ -35,8 +37,12 @@ class Item(MethodView):
 
 @item.route("/items")
 class ItemList(MethodView):
+    @jwt_required()
     @item.response(200, ItemSchema(many=True))
     def get(self):
+        jwt = get_jwt()
+        if not jwt.get("is_admin"):
+            abort(403)
         return ItemModel.query.all()
         # return list(items.values())
 
